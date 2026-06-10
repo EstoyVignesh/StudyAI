@@ -2,12 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from database import engine, Base
-from routes import auth, quiz, tutor, progress
+from routes import auth, quiz, tutor, progress, materials
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    from seed_materials import seed
+    seed()
     yield
 
 
@@ -33,6 +35,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(quiz.router, prefix="/api/quiz", tags=["quiz"])
 app.include_router(tutor.router, prefix="/api/tutor", tags=["tutor"])
 app.include_router(progress.router, prefix="/api/progress", tags=["progress"])
+app.include_router(materials.router, prefix="/api/materials", tags=["materials"])
 
 
 @app.get("/api/health")

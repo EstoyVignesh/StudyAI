@@ -80,3 +80,19 @@ class ChatMessage(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     session = relationship("ChatSession", back_populates="messages")
+
+
+class StudyMaterial(Base):
+    __tablename__ = "study_materials"
+
+    id = Column(Integer, primary_key=True, index=True)
+    exam_type = Column(String, nullable=False, index=True)
+    subject = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    year = Column(Integer, nullable=True, index=True)
+    material_type = Column(String, default="question_paper")  # question_paper, answer_key, syllabus, notes
+    url = Column(String, nullable=False)
+    language = Column(String, default="english")
+    tags = Column(JSON, default=list)
+    is_official = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

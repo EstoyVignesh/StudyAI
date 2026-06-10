@@ -1,11 +1,12 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { BookOpen, MessageSquare, BarChart2, Home, LogOut, Brain } from 'lucide-react'
+import { BookOpen, MessageSquare, BarChart2, Home, LogOut, Brain, FolderOpen } from 'lucide-react'
 import { useAuthStore } from '../store'
 
 const navItems = [
   { path: '/dashboard', icon: Home, label: 'Home' },
   { path: '/quiz', icon: BookOpen, label: 'Quiz' },
   { path: '/tutor', icon: MessageSquare, label: 'Tutor' },
+  { path: '/materials', icon: FolderOpen, label: 'Papers' },
   { path: '/progress', icon: BarChart2, label: 'Progress' },
 ]
 
