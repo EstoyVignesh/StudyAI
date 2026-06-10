@@ -1,7 +1,9 @@
 import axios from 'axios'
 
+const BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api'
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: BASE,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -19,7 +21,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const url = err.config?.url || ''
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register')
+    if (err.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('studyai-auth')
       window.location.href = '/login'
     }

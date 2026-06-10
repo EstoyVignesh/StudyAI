@@ -8,6 +8,8 @@ import Quiz from './pages/Quiz'
 import Tutor from './pages/Tutor'
 import Progress from './pages/Progress'
 import Materials from './pages/Materials'
+import Insights from './pages/Insights'
+import Study from './pages/Study'
 import Layout from './components/Layout'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -68,6 +70,26 @@ export default function App() {
             <PrivateRoute>
               <Layout>
                 <Materials />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/insights"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <Insights />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/study"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <Study />
               </Layout>
             </PrivateRoute>
           }

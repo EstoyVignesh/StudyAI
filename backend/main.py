@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from database import engine, Base
-from routes import auth, quiz, tutor, progress, materials
+from routes import auth, quiz, tutor, progress, materials, insights, study
 
 
 @asynccontextmanager
@@ -36,6 +36,8 @@ app.include_router(quiz.router, prefix="/api/quiz", tags=["quiz"])
 app.include_router(tutor.router, prefix="/api/tutor", tags=["tutor"])
 app.include_router(progress.router, prefix="/api/progress", tags=["progress"])
 app.include_router(materials.router, prefix="/api/materials", tags=["materials"])
+app.include_router(insights.router, prefix="/api/insights", tags=["insights"])
+app.include_router(study.router, prefix="/api/study", tags=["study"])
 
 
 @app.get("/api/health")

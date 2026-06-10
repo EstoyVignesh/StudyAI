@@ -82,6 +82,28 @@ class ChatMessage(Base):
     session = relationship("ChatSession", back_populates="messages")
 
 
+class InsightCache(Base):
+    __tablename__ = "insight_cache"
+
+    id = Column(Integer, primary_key=True, index=True)
+    cache_key = Column(String, unique=True, index=True, nullable=False)
+    content = Column(Text, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class TopicProgress(Base):
+    __tablename__ = "topic_progress"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    exam_type = Column(String, nullable=False)
+    subject = Column(String, nullable=False)
+    topic = Column(String, nullable=False)
+    quiz_score = Column(Integer, nullable=True)
+    completed_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class StudyMaterial(Base):
     __tablename__ = "study_materials"
 
