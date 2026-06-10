@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime
 from database import get_db
-from models import QuizSession, QuizAnswer
+from models import QuizSession, QuizAnswer, User
 from auth_utils import get_current_user
 from ai.question_generator import generate_question
-from exam_content import EXAM_CONTENT
+from exam_content import EXAM_CONTENT, STATE_LIST
 
 router = APIRouter()
 
@@ -18,6 +19,7 @@ class StartSessionRequest(BaseModel):
     exam_type: str
     subject: str
     topic: str
+    language: Optional[str] = None
 
 
 class SubmitAnswerRequest(BaseModel):
@@ -45,16 +47,35 @@ class SessionResponse(BaseModel):
 
 
 @router.get("/exams")
-def get_exams():
-    return {
-        exam: {
+def get_exams(
+    language: Optional[str] = None,
+    state: Optional[str] = None,
+    level: Optional[str] = None,
+):
+    result = {}
+    for key, data in EXAM_CONTENT.items():
+        if language and language not in data["languages"]:
+            continue
+        if state and data["state"] != state:
+            continue
+        if level and data["level"] != level:
+            continue
+        result[key] = {
             "name": data["name"],
+            "short": data["short"],
             "description": data["description"],
+            "level": data["level"],
+            "state": data["state"],
+            "languages": data["languages"],
             "color": data["color"],
             "subjects": list(data["subjects"].keys()),
         }
-        for exam, data in EXAM_CONTENT.items()
-    }
+    return result
+
+
+@router.get("/states")
+def get_states():
+    return STATE_LIST
 
 
 @router.get("/exams/{exam_type}/subjects")
@@ -64,10 +85,9 @@ def get_subjects(exam_type: str):
         raise HTTPException(status_code=404, detail="Exam not found")
     return {
         "exam_type": exam_type,
-        "subjects": {
-            subject: topics
-            for subject, topics in exam["subjects"].items()
-        },
+        "name": exam["name"],
+        "languages": exam["languages"],
+        "subjects": exam["subjects"],
     }
 
 
@@ -107,12 +127,21 @@ async def get_question(
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    user = db.query(User).filter(User.id == user_id).first()
+    language = user.language_preference if user else "english"
+
+    exam = EXAM_CONTENT.get(session.exam_type, {})
+    exam_languages = exam.get("languages", ["english"])
+    if language not in exam_languages:
+        language = exam_languages[0]
+
     try:
         question = await generate_question(
             exam_type=session.exam_type,
             subject=session.subject,
             topic=session.topic,
             difficulty=session.current_difficulty,
+            language=language,
         )
         question["session_id"] = session_id
         question["current_difficulty"] = session.current_difficulty
@@ -123,6 +152,7 @@ async def get_question(
             if session.questions_answered > 0
             else 0
         )
+        question["language"] = language
         return question
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate question: {str(e)}")
@@ -164,7 +194,6 @@ def submit_answer(
             session.streak = 0
     else:
         session.streak = max(0, session.streak - 1)
-        wrong_streak = session.questions_answered - session.correct_answers
         recent_answers = (
             db.query(QuizAnswer)
             .filter(QuizAnswer.session_id == req.session_id)

@@ -2,8 +2,13 @@ import api from './client'
 import type { Exam, Question, AnswerResult, QuizSession } from '../types'
 
 export const quizApi = {
-  getExams: async (): Promise<Record<string, Exam>> => {
-    const { data } = await api.get('/quiz/exams')
+  getExams: async (params?: { language?: string; state?: string; level?: string }): Promise<Record<string, Exam>> => {
+    const { data } = await api.get('/quiz/exams', { params })
+    return data
+  },
+
+  getStates: async (): Promise<string[]> => {
+    const { data } = await api.get('/quiz/states')
     return data
   },
 

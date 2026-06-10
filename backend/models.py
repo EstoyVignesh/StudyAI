@@ -12,6 +12,8 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     selected_exam = Column(String, nullable=True)
+    language_preference = Column(String, default="english", nullable=False)
+    state = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     quiz_sessions = relationship("QuizSession", back_populates="user")

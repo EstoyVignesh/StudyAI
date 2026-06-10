@@ -7,52 +7,66 @@ load_dotenv()
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
+LANGUAGE_INSTRUCTIONS = {
+    "tamil": "Generate the entire question, all options (A/B/C/D), and the explanation IN TAMIL LANGUAGE (தமிழில்). Use proper Tamil script.",
+    "hindi": "Generate the entire question, all options (A/B/C/D), and the explanation IN HINDI LANGUAGE (हिन्दी में). Use proper Devanagari script.",
+    "english": "Generate the question, options, and explanation in English.",
+}
 
-async def generate_question(exam_type: str, subject: str, topic: str, difficulty: int) -> dict:
-    """Generate an adaptive MCQ question using Claude with thinking."""
+DIFFICULTY_DESC = {
+    1: "very basic, straightforward factual recall",
+    2: "easy, tests fundamental understanding",
+    3: "medium, requires application of concepts",
+    4: "hard, requires analysis and deeper understanding",
+    5: "expert level, requires synthesis and evaluation of complex concepts",
+}
 
-    difficulty_desc = {
-        1: "very basic, straightforward factual recall",
-        2: "easy, tests fundamental understanding",
-        3: "medium, requires application of concepts",
-        4: "hard, requires analysis and deeper understanding",
-        5: "expert level, requires synthesis and evaluation of complex concepts",
-    }
+
+async def generate_question(
+    exam_type: str,
+    subject: str,
+    topic: str,
+    difficulty: int,
+    language: str = "english",
+) -> dict:
+    lang_instruction = LANGUAGE_INSTRUCTIONS.get(language, LANGUAGE_INSTRUCTIONS["english"])
+    diff_desc = DIFFICULTY_DESC.get(difficulty, "medium difficulty")
 
     prompt = f"""You are generating an exam question for {exam_type} preparation.
 
 Subject: {subject}
 Topic: {topic}
-Difficulty Level: {difficulty}/5 — {difficulty_desc.get(difficulty, "medium")}
+Difficulty Level: {difficulty}/5 — {diff_desc}
 
-Generate ONE high-quality multiple choice question appropriate for {exam_type} exam.
+LANGUAGE INSTRUCTION: {lang_instruction}
 
-Return ONLY a valid JSON object with EXACTLY this structure (no markdown, no explanation):
+Generate ONE high-quality multiple choice question.
+
+Return ONLY a valid JSON object with EXACTLY this structure (no markdown, no extra text):
 {{
-  "question": "The complete question text",
+  "question": "The complete question text (in {language})",
   "options": {{
-    "A": "First option text",
-    "B": "Second option text",
-    "C": "Third option text",
-    "D": "Fourth option text"
+    "A": "First option (in {language})",
+    "B": "Second option (in {language})",
+    "C": "Third option (in {language})",
+    "D": "Fourth option (in {language})"
   }},
   "correct_answer": "A",
-  "explanation": "Clear explanation of why the correct answer is right and briefly why others are wrong. Be educational.",
+  "explanation": "Clear explanation in {language} of why the correct answer is right and briefly why others are wrong.",
   "topic": "{topic}",
   "difficulty": {difficulty}
 }}
 
 Requirements:
-- Question must be factually accurate and exam-relevant for {exam_type}
-- All 4 options must be plausible (no obviously wrong distractors)
-- Explanation should be educational and help the student understand
-- For difficulty {difficulty}/5: {difficulty_desc.get(difficulty, "medium")}
+- Factually accurate and exam-relevant for {exam_type}
+- All 4 options must be plausible
 - correct_answer must be exactly "A", "B", "C", or "D"
+- All text (question, options, explanation) must be in {language}
 """
 
     with client.messages.stream(
         model="claude-opus-4-8",
-        max_tokens=1024,
+        max_tokens=1500,
         thinking={"type": "adaptive"},
         messages=[{"role": "user", "content": prompt}],
     ) as stream:
@@ -71,10 +85,9 @@ Requirements:
 
     question_data = json.loads(text_content[start:end])
 
-    required_keys = ["question", "options", "correct_answer", "explanation", "topic", "difficulty"]
-    for key in required_keys:
+    for key in ["question", "options", "correct_answer", "explanation", "topic", "difficulty"]:
         if key not in question_data:
-            raise ValueError(f"Missing key in question data: {key}")
+            raise ValueError(f"Missing key: {key}")
 
     if question_data["correct_answer"] not in ["A", "B", "C", "D"]:
         raise ValueError(f"Invalid correct_answer: {question_data['correct_answer']}")

@@ -3,6 +3,8 @@ export interface User {
   email: string
   username: string
   selected_exam: string | null
+  language_preference: string
+  state: string | null
 }
 
 export interface AuthState {
@@ -16,7 +18,11 @@ export interface AuthState {
 
 export interface Exam {
   name: string
+  short: string
   description: string
+  level: 'national' | 'state'
+  state: string | null
+  languages: string[]
   color: string
   subjects: string[]
 }

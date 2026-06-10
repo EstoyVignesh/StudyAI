@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 from database import get_db
-from models import ChatSession, ChatMessage
+from models import ChatSession, ChatMessage, User
 from auth_utils import get_current_user
 from ai.tutor import stream_tutor_response
 
@@ -112,6 +112,9 @@ async def chat(
     ]
     history.append({"role": "user", "content": req.content})
 
+    user = db.query(User).filter(User.id == user_id).first()
+    language = user.language_preference if user else "english"
+
     full_response = []
 
     async def generate():
@@ -119,6 +122,7 @@ async def chat(
             exam_type=session.exam_type,
             messages=history,
             subject=session.subject,
+            language=language,
         ):
             if chunk != "data: [DONE]\n\n":
                 text = chunk[6:]

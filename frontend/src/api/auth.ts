@@ -8,13 +8,27 @@ interface AuthResponse {
 }
 
 export const authApi = {
-  register: async (email: string, username: string, password: string, selected_exam?: string) => {
+  register: async (
+    email: string,
+    username: string,
+    password: string,
+    selected_exam?: string,
+    language_preference?: string,
+    state?: string,
+  ) => {
     const { data } = await api.post<AuthResponse>('/auth/register', {
       email,
       username,
       password,
       selected_exam,
+      language_preference: language_preference || 'english',
+      state,
     })
+    return data
+  },
+
+  updateProfile: async (profile: { selected_exam?: string; language_preference?: string; state?: string }) => {
+    const { data } = await api.patch<User>('/auth/me/profile', profile)
     return data
   },
 
